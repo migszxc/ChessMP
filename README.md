@@ -32,6 +32,8 @@ The goal is to create a single-player chess game. The player should be able to c
 	* allowing the player to choose their color
 	* castling
 	* en passant
+	* checkmating
+	* endgame states (checkmate and stalemate)
 * Minor missing features
 	* A more a e s t h e t i c board
 	* saving and loading game states
