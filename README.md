@@ -18,5 +18,21 @@ The goal is to create a single-player chess game. The player should be able to c
 	* has methods that:
 		* return these information
 		* promote the piece( not yet implemented )
+* Basic Game Logic
+	* all proper movesets of each piece
+	* does not allow a player to make a move that leaves their king in check
+	* turn-switching
+	* does not allow leaps unless a knight is in play
 * Prints the board
 # Todo
+* Major missing features
+	* Making it into a single-player game
+		* has to employ backtracking
+		* has to create a 2nd player as the computer player 
+	* allowing the player to choose their color
+	* castling
+	* en passant
+* Minor missing features
+	* A more a e s t h e t i c board
+	* saving and loading game states
+
