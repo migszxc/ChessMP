@@ -71,9 +71,12 @@ int main() {
 
 // returns true if the move results in the king being in check
 bool willKingBeInCheck(Position origin, Position newPos, ChessPiece pieces[32], bool turn) {
-  string lastMove = "";
+  string lastMove;
+  // moves the piece in the position in question and saves the captured piece
   ChessPiece* eaten = movePiece(origin, newPos, pieces, turn, &lastMove);
+  // if it results in the player's king in check, then return true, otherwise false
   if (isKingInCheck(pieces, turn)) {
+    // reverse the move after checking
     reverseLastMove(lastMove, pieces, eaten);
     return true;
   } else {
@@ -84,11 +87,15 @@ bool willKingBeInCheck(Position origin, Position newPos, ChessPiece pieces[32], 
 
 // reverses last move
 bool reverseLastMove(string lastMove, ChessPiece pieces[32], ChessPiece* eaten) {
+  // reverses the last move given in a format (original position)(current position)
+  // e.g. (e7e5)
   Position oldPos = Position().toPosition(lastMove.substr(0,2));
   Position curPos = Position().toPosition(lastMove.substr(2,2));
 
   ChessPiece* piece = getPieceAt(curPos, pieces);
+  // if there was a captured piece, revive it
   if (eaten) eaten->isDead = false;
+  // place the piece into its old position
   (*piece).position = oldPos;
   return true;
 }
@@ -98,8 +105,12 @@ ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], b
   ChessPiece* piece = getPieceAt(origin, pieces);
   ChessPiece* toEat = getPieceAt(newPos, pieces);
 
+  // captures the piece in the resulting square if it exists
   if (toEat) (*toEat).isDead = true;
+  // changes the position of the piece to the new position
   (*piece).position = newPos;
+  // returns this move in the form of (original position)(current position)
+  // e.g. (e7e5)
   *lastMove = origin.toString() + newPos.toString();
   return toEat;
 }
@@ -112,21 +123,26 @@ int isEndGame(ChessPiece pieces[32], bool color) {
 // returns true if the king is in check
 bool isKingInCheck(ChessPiece pieces[32], bool color) {
   ChessPiece *king = NULL;
+  // searches for the king of a color
   for (int i = 0; i < 32; i++) {
     if (pieces[i].getType() == 'K' && pieces[i].getColor() == color) {
       king = &pieces[i];
     }
   }
+  // returns if it can be captured
   return canBeCaptured(king->position, pieces);
 }
 
 // checks if the piece in a position can be captured by anything else
 bool canBeCaptured(Position pos, ChessPiece pieces[32]){
+  // searches for the piece in question
   ChessPiece* toEat = getPieceAt(pos, pieces);
   if (toEat == NULL) return false;
+  // assumes that it cannot be captured
   bool valid = false;
 
   for (int i = 0; i < 32; i ++) {
+    // uses distance and slope to evaluate move validity
     char type = pieces[i].getType();
     bool color = pieces[i].getColor();
     double Dy = pieces[i].position.y - (*toEat).position.y;
@@ -138,21 +154,28 @@ bool canBeCaptured(Position pos, ChessPiece pieces[32]){
     double distance = origin.distanceTo(newPos);
     if (pieces[i].isDead) return false;
     if (color != (*toEat).getColor()) {
+      // checks the moveset of each piece of the opposite color if it coincides with
+      // the piece in question's position
       switch(type) {
         case 'Q':
+        // queens can move diagonally and horizontally with no distance limit
         if ((slope == -1 || slope == 0 || slope == 1 || slope == INFINITY)
         && !inBetween(origin, newPos, pieces)) return true;
         break;
         case 'K':
+        // kings can move diagonally and horizontally by 1 square max
         if ((slope == -1 || slope == 0 || slope == 1 || slope == INFINITY) && distance <= sqrt(2)) return true;
         break;
         case 'R':
+        // rooks can move horizonally with no distance limit
         if ((slope == 0 || slope == INFINITY) && !inBetween(origin, newPos, pieces)) return true;
         break;
         case 'N':
+        // knights move with a slope of 2 or 0.5 with a distance limit of sqrt(5)
         if ((slope == 2.0 || slope == 0.5 || slope == -2.0 || slope == -0.5) && distance <= sqrt(5)) return true;
         break;
         case 'B':
+        // bishops can move diagonally with no distance limit
         if ((slope == 1 || slope == -1) && !inBetween(origin, newPos, pieces)) return true;
         break;
         case 'P':
@@ -181,12 +204,20 @@ bool canBeCaptured(Position pos, ChessPiece pieces[32]){
   return false;
 }
 
+// lkjfdsa;
 int signum(double any) {
   if (any < 0) return -1;
   if (any == 0) return 0;
   if (any > 0) return 1;
 }
 
+// evaluates if there is a piece that exists between 2 positions
+/*
+finds the slope and distance between pos1 and pos2 and goes through every piece
+if that piece has the same slope as the line made by pos1 and pos2 and its distance
+to pos1 is less than pos1's distance to pos2, and its on the correct side, then it is
+in between pos1 and pos2
+*/
 bool inBetween(Position pos1, Position pos2, ChessPiece pieces[32]) {
   double Dx = pos1.x-pos2.x;
   double Dy = pos1.y-pos2.y;
