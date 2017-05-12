@@ -10,6 +10,12 @@ using namespace std;
 #define BLACK true
 #endif
 
+// reverses last move
+bool reverseLastMove(string lastMove, ChessPiece pieces[32], ChessPiece* eaten);
+// moves piece from origin to newPos
+ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *lastMove);
+// returns true if player color is checkmated
+bool isCheckMated(ChessPiece pieces[32], bool color);
 // returns true if king is in check
 bool isKingInCheck(ChessPiece pieces[32], bool color);
 // returns true if the piece in question can be captured
@@ -26,8 +32,8 @@ void updateBoard(char board[][8], ChessPiece pieces[32]);
 void printBoard(char board[][8]);
 // initializes the initial positions of the pieces
 void initializePieces(ChessPiece pieces[32]);
-// moves the piece in origin to newPos if valid
-bool movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *err);
+// returns true if move origin to newPos is valid
+bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *err);
 // returns the piece at a certain position
 ChessPiece* getPieceAt(Position pos, ChessPiece pieces[32]);
 
@@ -39,6 +45,7 @@ int main() {
   initializePieces(pieces);
   bool turn = WHITE;
   string err;
+  string lastMove;
 
   for (;;) {
     clearBoard(board);
@@ -48,15 +55,46 @@ int main() {
     cin >> temp;
     cout << "Pick a place to move it: ";
     cin >> temp2;
-    if (movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
-      cout << "true" << endl;
-      turn = !turn;
+    if (canMovePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
+      ChessPiece* eaten = movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&lastMove);
+      if (isKingInCheck(pieces, turn)) {
+        reverseLastMove(lastMove, pieces, eaten);
+        cout << "false: king in check" << endl;
+      } else {
+        cout << "true" << endl;
+        turn = !turn;
+      }
     } else {
       cout << "false: "<< err << endl;
     }
     err = "illegal move";
     cout << endl;
   }
+}
+
+bool reverseLastMove(string lastMove, ChessPiece pieces[32], ChessPiece* eaten) {
+  Position oldPos = Position().toPosition(lastMove.substr(0,2));
+  Position curPos = Position().toPosition(lastMove.substr(2,2));
+
+  ChessPiece* piece = getPieceAt(curPos, pieces);
+  if (eaten) eaten->isDead = false;
+  (*piece).position = oldPos;
+  return true;
+}
+
+ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *lastMove) {
+  ChessPiece* piece = getPieceAt(origin, pieces);
+  ChessPiece* toEat = getPieceAt(newPos, pieces);
+
+  if (toEat) (*toEat).isDead = true;
+  (*piece).position = newPos;
+  *lastMove = origin.toString() + newPos.toString();
+  return toEat;
+}
+
+
+bool isEndGame(ChessPiece pieces[32], bool color) {
+
 }
 
 // returns true if the king is in check
@@ -211,7 +249,7 @@ void initializePieces(ChessPiece pieces[32]){
 
 // returns true if the move is valid
 // moves the piece at origin to newPos
-bool movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *err) {
+bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *err) {
   // if the newposition is out of range of the board then it is an invalid move
   if (newPos.x < 0 || newPos.x > 7 || newPos.y < 0 || newPos.y > 7) {
     *err = "out of bounds exception";
@@ -305,17 +343,6 @@ bool movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool tur
   if (turn != (*piece).getColor()) {
     *err = "piece is not player's turn";
     valid = false;
-  }
-  // update the piece's position and KILL THE OTHER PIECE (if it exists lol)
-  if (valid) {
-    if (toEat) (*toEat).isDead = true;
-    (*piece).position = newPos;
-  }
-  if (isKingInCheck(pieces, turn)) {
-    if (toEat) toEat->isDead = false;
-    piece->position = origin;
-    valid = false;
-    *err = "King is in check";
   }
   return valid;
 }
