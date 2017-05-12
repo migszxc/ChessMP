@@ -10,12 +10,14 @@ using namespace std;
 #define BLACK true
 #endif
 
+// returns true if the move from origin to newPos will result in a check for turn king
+bool willKingBeInCheck(Position origin, Position newPos, ChessPiece pieces[32], bool turn);
+// returns endGame type 0 if not 1 if checkmate -1 if stalemate
+int isEndGame(ChessPiece pieces[32], bool color);
 // reverses last move
 bool reverseLastMove(string lastMove, ChessPiece pieces[32], ChessPiece* eaten);
 // moves piece from origin to newPos
 ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *lastMove);
-// returns true if player color is checkmated
-bool isCheckMated(ChessPiece pieces[32], bool color);
 // returns true if king is in check
 bool isKingInCheck(ChessPiece pieces[32], bool color);
 // returns true if the piece in question can be captured
@@ -56,14 +58,9 @@ int main() {
     cout << "Pick a place to move it: ";
     cin >> temp2;
     if (canMovePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
-      ChessPiece* eaten = movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&lastMove);
-      if (isKingInCheck(pieces, turn)) {
-        reverseLastMove(lastMove, pieces, eaten);
-        cout << "false: king in check" << endl;
-      } else {
-        cout << "true" << endl;
-        turn = !turn;
-      }
+      movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&lastMove);
+      cout << "true" << endl;
+      turn = !turn;
     } else {
       cout << "false: "<< err << endl;
     }
@@ -72,6 +69,20 @@ int main() {
   }
 }
 
+// returns true if the move results in the king being in check
+bool willKingBeInCheck(Position origin, Position newPos, ChessPiece pieces[32], bool turn) {
+  string lastMove = "";
+  ChessPiece* eaten = movePiece(origin, newPos, pieces, turn, &lastMove);
+  if (isKingInCheck(pieces, turn)) {
+    reverseLastMove(lastMove, pieces, eaten);
+    return true;
+  } else {
+    reverseLastMove(lastMove, pieces, eaten);
+    return false;
+  }
+}
+
+// reverses last move
 bool reverseLastMove(string lastMove, ChessPiece pieces[32], ChessPiece* eaten) {
   Position oldPos = Position().toPosition(lastMove.substr(0,2));
   Position curPos = Position().toPosition(lastMove.substr(2,2));
@@ -82,6 +93,7 @@ bool reverseLastMove(string lastMove, ChessPiece pieces[32], ChessPiece* eaten) 
   return true;
 }
 
+// moves the piece and returns a ChessPiece that is captured (if any)
 ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *lastMove) {
   ChessPiece* piece = getPieceAt(origin, pieces);
   ChessPiece* toEat = getPieceAt(newPos, pieces);
@@ -93,7 +105,7 @@ ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], b
 }
 
 
-bool isEndGame(ChessPiece pieces[32], bool color) {
+int isEndGame(ChessPiece pieces[32], bool color) {
 
 }
 
@@ -342,6 +354,11 @@ bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool 
   // invalidate the move if the piece color being moved is not the turn
   if (turn != (*piece).getColor()) {
     *err = "piece is not player's turn";
+    valid = false;
+  }
+  // invalidate the move if it will result in the check of the king
+  if (willKingBeInCheck(origin, newPos, pieces, turn)) {
+    *err = "king in check";
     valid = false;
   }
   return valid;
