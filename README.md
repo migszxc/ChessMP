@@ -23,6 +23,7 @@ The goal is to create a single-player chess game. The player should be able to c
 	* does not allow a player to make a move that leaves their king in check
 	* turn-switching
 	* does not allow leaps unless a knight is in play
+	* endgame state (stalemate or checkmate)
 * Prints the board
 # Todo
 * Major missing features
@@ -32,8 +33,6 @@ The goal is to create a single-player chess game. The player should be able to c
 	* allowing the player to choose their color
 	* castling
 	* en passant
-	* checkmating
-	* endgame states (checkmate and stalemate)
 * Minor missing features
 	* A more a e s t h e t i c board
 	* saving and loading game states
