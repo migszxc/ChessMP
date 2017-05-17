@@ -13,7 +13,7 @@ using namespace std;
 // returns true if the move from origin to newPos will result in a check for turn king
 bool willKingBeInCheck(Position origin, Position newPos, ChessPiece pieces[32], bool turn);
 // returns endGame type 0 if not 1 if checkmate -1 if stalemate
-int isEndGame(ChessPiece pieces[32], bool color);
+int isEndGame(ChessPiece pieces[32]);
 // reverses last move
 bool reverseLastMove(string lastMove, ChessPiece pieces[32], ChessPiece* eaten);
 // moves piece from origin to newPos
@@ -38,38 +38,54 @@ void initializePieces(ChessPiece pieces[32]);
 bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *err);
 // returns the piece at a certain position
 ChessPiece* getPieceAt(Position pos, ChessPiece pieces[32]);
+// backtrackckckckckc
+bool makeAMove(ChessPiece pieces[32], bool turn);
 
 int main() {
   ChessPiece pieces[32];
   char board[8][8];
+  char playerC;
   string temp, temp2;
   clearBoard(board);
   initializePieces(pieces);
   bool turn = WHITE;
+  bool player = WHITE;
   string err;
   string lastMove;
   bool end = false;
   int gamestate = 0;
+  cout << "w or b?" << endl;
+  cin >> playerC;
+  if (playerC == 'b') player = BLACK;
 
   while (gamestate == 0) {
     clearBoard(board);
     updateBoard(board, pieces);
     printBoard(board);
-    cout << "Pick a piece to move: ";
-    cin >> temp;
-    cout << "Pick a place to move it: ";
-    cin >> temp2;
-
-    if (canMovePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
-      movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn, &lastMove);
-      cout << "true" << endl;
-      turn = !turn;
+    if (turn == player) {
+      cout << "Pick a piece to move: ";
+      cin >> temp;
+      cout << "Pick a place to move it: ";
+      cin >> temp2;
+      if (canMovePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
+        movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn, &lastMove);
+        cout << "true" << endl;
+        turn = !turn;
+      } else {
+        cout << "false: "<< err << endl;
+      }
     } else {
-      cout << "false: "<< err << endl;
+      if (makeAMove(pieces, turn)) {
+        cout << "true" << endl;
+        turn = !turn;
+      } else {
+        cout << "false" << endl;
+      }
     }
+
     err = "illegal move";
     cout << endl;
-    gamestate = isEndGame(pieces, turn);
+    gamestate = isEndGame(pieces);
     if (gamestate == 1) {
       cout << "Checkmate!" << endl;
       end = true;
@@ -78,6 +94,27 @@ int main() {
       end = true;
     }
   }
+}
+
+bool makeAMove(ChessPiece pieces[32], bool turn) {
+  string temp;
+
+  for (int i = 0; i < 32; i++) {
+    if (pieces[i].getColor() == turn && pieces[i].isDead == false) {
+      for (int x = 0; x < 8; x++) {
+        for (int y = 0; y < 8; y++) {
+          cout << "is " << pieces[i].position.toString() << Position(x,y).toString() << " valid?" << endl;
+          if (canMovePiece(pieces[i].position, Position(x,y),pieces, turn, &temp)) {
+            movePiece(pieces[i].position, Position(x,y), pieces, turn, &temp);
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+
 }
 
 // returns true if the move results in the king being in check
@@ -127,16 +164,18 @@ ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], b
 }
 
 
-int isEndGame(ChessPiece pieces[32], bool color) {
-  bool check = isKingInCheck(pieces, color);
+int isEndGame(ChessPiece pieces[32]) {
+  cout << "endgame test:" << endl;
+  bool checkW = isKingInCheck(pieces, WHITE);
+  bool checkB = isKingInCheck(pieces, BLACK);
   string err;
 
   for (int i = 0; i < 32; i++) {
-    if (pieces[i].getColor() == color) {
+    if (!pieces[i].isDead) {
       for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
           cout << "is " << pieces[i].position.toString() << Position(x,y).toString() << " valid?" << endl;
-          if (canMovePiece(pieces[i].position, Position(x,y),pieces, color, &err)) {
+          if (canMovePiece(pieces[i].position, Position(x,y),pieces, pieces[i].getColor(), &err)) {
             return 0;
           }
         }
@@ -144,7 +183,7 @@ int isEndGame(ChessPiece pieces[32], bool color) {
     }
   }
 
-  if (check) return 1;
+  if (checkW || checkB) return 1;
   else return -1;
 
 }
@@ -174,60 +213,55 @@ bool canBeCaptured(Position pos, ChessPiece pieces[32]){
     // uses distance and slope to evaluate move validity
     char type = pieces[i].getType();
     bool color = pieces[i].getColor();
-    double Dy = pieces[i].position.y - (*toEat).position.y;
-    double Dx = pieces[i].position.x - (*toEat).position.x;
+    double Dy = (*toEat).position.y - pieces[i].position.y;
+    double Dx = (*toEat).position.x - pieces[i].position.x;
     double slope = Dy / Dx;
     if (Dx == 0) slope = INFINITY;
     Position origin = pieces[i].position;
     Position newPos = (*toEat).position;
     double distance = origin.distanceTo(newPos);
-    if (pieces[i].isDead) return false;
-    if (color != (*toEat).getColor()) {
-      // checks the moveset of each piece of the opposite color if it coincides with
-      // the piece in question's position
-      switch(type) {
-        case 'Q':
-        // queens can move diagonally and horizontally with no distance limit
-        if ((slope == -1 || slope == 0 || slope == 1 || slope == INFINITY)
-        && !inBetween(origin, newPos, pieces)) return true;
-        break;
-        case 'K':
-        // kings can move diagonally and horizontally by 1 square max
-        if ((slope == -1 || slope == 0 || slope == 1 || slope == INFINITY) && distance <= sqrt(2)) return true;
-        break;
-        case 'R':
-        // rooks can move horizonally with no distance limit
-        if ((slope == 0 || slope == INFINITY) && !inBetween(origin, newPos, pieces)) return true;
-        break;
-        case 'N':
-        // knights move with a slope of 2 or 0.5 with a distance limit of sqrt(5)
-        if ((slope == 2.0 || slope == 0.5 || slope == -2.0 || slope == -0.5) && distance <= sqrt(5)) return true;
-        break;
-        case 'B':
-        // bishops can move diagonally with no distance limit
-        if ((slope == 1 || slope == -1) && !inBetween(origin, newPos, pieces)) return true;
-        break;
-        case 'P':
-        if (color == WHITE) {
-          if (Dy == 1 && Dx == 0 && !toEat) {
-            return true;
-          } else if (Dy == 2 && Dx == 0 && origin.y == 1) {
-            return true;
-          } else if (toEat && abs(Dx) == 1 && Dy == 1) {
-            return true;
+    if (!pieces[i].isDead) {
+      if (color != (*toEat).getColor()) {
+        //cout << pieces[i].position.toString() << pos.toString() << "eat?" << endl;
+        // checks the moveset of each piece of the opposite color if it coincides with
+        // the piece in question's position
+        switch(type) {
+          case 'Q':
+          // queens can move diagonally and horizontally with no distance limit
+          if ((slope == -1 || slope == 0 || slope == 1 || slope == INFINITY)
+          && !inBetween(origin, newPos, pieces)) return true;
+          break;
+          case 'K':
+          // kings can move diagonally and horizontally by 1 square max
+          if ((slope == -1 || slope == 0 || slope == 1 || slope == INFINITY) && distance <= sqrt(2)) return true;
+          break;
+          case 'R':
+          // rooks can move horizonally with no distance limit
+          if ((slope == 0 || slope == INFINITY) && !inBetween(origin, newPos, pieces)) return true;
+          break;
+          case 'N':
+          // knights move with a slope of 2 or 0.5 with a distance limit of sqrt(5)
+          if ((slope == 2.0 || slope == 0.5 || slope == -2.0 || slope == -0.5) && distance <= sqrt(5)) return true;
+          break;
+          case 'B':
+          // bishops can move diagonally with no distance limit
+          if ((slope == 1 || slope == -1) && !inBetween(origin, newPos, pieces)) return true;
+          break;
+          case 'P':
+          if (color == WHITE) {
+            //cout << "Dy = " << Dy << "\nDx = " << Dx << endl;
+            if (toEat && abs(Dx) == 1 && Dy == 1) {
+              return true;
+            }
+          } else if (color == BLACK) {
+            if (toEat && abs(Dx) == 1 && Dy == -1) {
+              return true;
+            }
           }
-        } else if (color == BLACK) {
-          if (Dy == -1 && Dx == 0 && !toEat) {
-            return true;
-          } else if (Dy == -2 && Dx == 0 && origin.y == 6) {
-            return true;
-          } else if (toEat && abs(Dx) == 1 && Dy == -1) {
-            return true;
-          }
+          break;
         }
-        break;
+        ///kdjf;lkaf
       }
-      ///kdjf;lkaf
     }
   }
   return false;

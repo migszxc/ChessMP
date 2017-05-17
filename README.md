@@ -24,13 +24,10 @@ The goal is to create a single-player chess game. The player should be able to c
 	* turn-switching
 	* does not allow leaps unless a knight is in play
 	* endgame state (stalemate or checkmate)
+	* backtracking AI
 * Prints the board
 # Todo
 * Major missing features
-	* Making it into a single-player game
-		* has to employ backtracking
-		* has to create a 2nd player as the computer player 
-	* allowing the player to choose their color
 	* castling
 	* en passant
 * Minor missing features
