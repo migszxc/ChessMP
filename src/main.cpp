@@ -48,8 +48,10 @@ int main() {
   bool turn = WHITE;
   string err;
   string lastMove;
+  bool end = false;
+  int gamestate = 0;
 
-  for (;;) {
+  while (gamestate == 0) {
     clearBoard(board);
     updateBoard(board, pieces);
     printBoard(board);
@@ -57,8 +59,9 @@ int main() {
     cin >> temp;
     cout << "Pick a place to move it: ";
     cin >> temp2;
+
     if (canMovePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
-      movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&lastMove);
+      movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn, &lastMove);
       cout << "true" << endl;
       turn = !turn;
     } else {
@@ -66,6 +69,14 @@ int main() {
     }
     err = "illegal move";
     cout << endl;
+    gamestate = isEndGame(pieces, turn);
+    if (gamestate == 1) {
+      cout << "Checkmate!" << endl;
+      end = true;
+    } else if (gamestate == -1) {
+      cout << "Statemate" << endl;
+      end = true;
+    }
   }
 }
 
@@ -101,7 +112,7 @@ bool reverseLastMove(string lastMove, ChessPiece pieces[32], ChessPiece* eaten) 
 }
 
 // moves the piece and returns a ChessPiece that is captured (if any)
-ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *lastMove) {
+ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn,string *lastMove) {
   ChessPiece* piece = getPieceAt(origin, pieces);
   ChessPiece* toEat = getPieceAt(newPos, pieces);
 
@@ -117,6 +128,24 @@ ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], b
 
 
 int isEndGame(ChessPiece pieces[32], bool color) {
+  bool check = isKingInCheck(pieces, color);
+  string err;
+
+  for (int i = 0; i < 32; i++) {
+    if (pieces[i].getColor() == color) {
+      for (int x = 0; x < 8; x++) {
+        for (int y = 0; y < 8; y++) {
+          cout << "is " << pieces[i].position.toString() << Position(x,y).toString() << " valid?" << endl;
+          if (canMovePiece(pieces[i].position, Position(x,y),pieces, color, &err)) {
+            return 0;
+          }
+        }
+      }
+    }
+  }
+
+  if (check) return 1;
+  else return -1;
 
 }
 
@@ -298,6 +327,7 @@ bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool 
     *err = "out of bounds exception";
     return false;
   }
+  if (origin.equals(newPos)) return false;
   // find the piece in the origin position
   ChessPiece* piece = getPieceAt(origin, pieces);
   // find the piece in the new position (if it exists)
@@ -359,7 +389,7 @@ bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool 
     if (color == WHITE) {
       if (Dy == 1 && Dx == 0 && !toEat) {
         valid = true;
-      } else if (Dy == 2 && Dx == 0 && origin.y == 1) {
+      } else if (Dy == 2 && Dx == 0 && origin.y == 1 && !toEat) {
         valid = true;
       } else if (toEat && abs(Dx) == 1 && Dy == 1) {
         valid = true;
@@ -367,7 +397,7 @@ bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool 
     } else if (color == BLACK) {
       if (Dy == -1 && Dx == 0 && !toEat) {
         valid = true;
-      } else if (Dy == -2 && Dx == 0 && origin.y == 6) {
+      } else if (Dy == -2 && Dx == 0 && origin.y == 6 && !toEat) {
         valid = true;
       } else if (toEat && abs(Dx) == 1 && Dy == -1) {
         valid = true;
@@ -375,6 +405,7 @@ bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool 
     }
     break;
   }
+
   // invalidate the move if it results in capturing its own teammate
   if (toEat) {
     if ((*toEat).getColor() == (*piece).getColor()) {
