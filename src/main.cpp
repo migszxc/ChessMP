@@ -103,7 +103,7 @@ bool makeAMove(ChessPiece pieces[32], bool turn) {
     if (pieces[i].getColor() == turn && pieces[i].isDead == false) {
       for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
-          cout << "is " << pieces[i].position.toString() << Position(x,y).toString() << " valid?" << endl;
+          //cout << "is " << pieces[i].position.toString() << Position(x,y).toString() << " valid?" << endl;
           if (canMovePiece(pieces[i].position, Position(x,y),pieces, turn, &temp)) {
             movePiece(pieces[i].position, Position(x,y), pieces, turn, &temp);
             return true;
@@ -168,23 +168,36 @@ int isEndGame(ChessPiece pieces[32]) {
   cout << "endgame test:" << endl;
   bool checkW = isKingInCheck(pieces, WHITE);
   bool checkB = isKingInCheck(pieces, BLACK);
+  bool wHasMoves = false;
+  bool bHasMoves = false;
   string err;
 
   for (int i = 0; i < 32; i++) {
     if (!pieces[i].isDead) {
       for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
-          cout << "is " << pieces[i].position.toString() << Position(x,y).toString() << " valid?" << endl;
+          //cout << "is " << pieces[i].position.toString() << Position(x,y).toString() << " valid?" << endl;
           if (canMovePiece(pieces[i].position, Position(x,y),pieces, pieces[i].getColor(), &err)) {
-            return 0;
+            if (pieces[i].getColor() == WHITE) {
+              wHasMoves = true;
+            } else {
+              bHasMoves = true;
+            }
+            if (wHasMoves && bHasMoves) return 0;
           }
         }
       }
     }
   }
-
-  if (checkW || checkB) return 1;
-  else return -1;
+  if (checkW && !wHasMoves) {
+    return 1;
+  } else if (checkB && !bHasMoves) {
+    return 1;
+  } else if ((!wHasMoves || !bHasMoves) && !(checkW || checkB)) {
+    return -1;
+  } else {
+    return 0;
+  }
 
 }
 
