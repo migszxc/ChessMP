@@ -38,7 +38,7 @@ void initializePieces(ChessPiece pieces[32]);
 bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *err);
 // returns the piece at a certain position
 ChessPiece* getPieceAt(Position pos, ChessPiece pieces[32]);
-// backtrackckckckckc
+// backtrack 5
 bool makeAMove(ChessPiece pieces[32], bool turn);
 
 int main() {
@@ -46,6 +46,8 @@ int main() {
   char tempest;
   char board[8][8];
   char playerC;
+  int choice = 0;
+  int choice2;
   string temp, temp2;
   clearBoard(board);
   initializePieces(pieces);
@@ -56,76 +58,117 @@ int main() {
   bool end = false;
   bool moveValidity = true;
   int gamestate = 0;
-  cout << "w or b?" << endl;
-  cin >> playerC;
-  if (playerC == 'b') player = BLACK;
 
-  while (gamestate == 0) {
-    clearBoard(board);
-    updateBoard(board, pieces);
+  while (choice != 2) {
+    choice = 0;
     system("cls");
-    printBoard(board);
-    if (turn == player) {
-      if (!moveValidity)
-      cout << "Invalid move: " << err << endl;
-      cout << "Pick a piece to move: ";
-      cin >> temp;
-      cout << "Pick a place to move it: ";
-      cin >> temp2;
-      if (canMovePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
-        movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn, &lastMove);
-        //cout << "true" << endl;
-        moveValidity = true;
-        ChessPiece* piece = getPieceAt(Position().toPosition(temp2), pieces);
-        // promote the piece to a queen if it's at the end
-        if ((*piece).getType() == 'P') {
-          if (turn == WHITE) {
-            if (temp2[1] == '8') {
-              cout << "Pawn promotion to?: ";
-              cin >> tempest;
-              while (!(*piece).promote(tempest)) {
-                cout << "Invalid promotion, try again: ";
-                cin >> tempest;
+    cout
+    <<"   ________   \n"
+    <<"  / ____/ /_  ___  __________\n"
+    <<" / /   / __ \\/ _ \\/ ___/ ___/\n"
+    <<"/ /___/ / / /  __(__  |__  ) \n"
+    <<"\\____/_/ /_/\\___/____/____/ \n"
+    <<"\n"
+    <<"\tVersion 2.5\n"
+    <<"\tSanchez, Victoriano, Andal, Perena\n"
+    <<"\n"
+    <<"\t\t\t1) Start Game\n"
+    <<"\t\t\t2) Quit Game\n"
+    <<"\t\t\n"
+    <<"\t\tChoice: ";
+    cin >>choice;
+    if (choice == 1) {
+      gamestate = 0;
+      system("cls");
+      cout << "White or Black?(w or b)" << endl;
+      cin >> playerC;
+      while (playerC != 'w' && playerC != 'b') {
+        cout << "Invalid input, try again: ";
+        cin >> playerC;
+      }
+      if (playerC == 'b') player = BLACK;
+
+      while (gamestate == 0) {
+        clearBoard(board);
+        updateBoard(board, pieces);
+        system("cls");
+        printBoard(board);
+        if (turn == player) {
+          if (!moveValidity)
+          cout << "Invalid move: " << err << endl;
+          cout << "Pick a piece to move: ";
+          cin >> temp;
+          cout << "Pick a place to move it: ";
+          cin >> temp2;
+          if (canMovePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
+            movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn, &lastMove);
+            //cout << "true" << endl;
+            moveValidity = true;
+            ChessPiece* piece = getPieceAt(Position().toPosition(temp2), pieces);
+            // promote the piece to a queen if it's at the end
+            if ((*piece).getType() == 'P') {
+              if (turn == WHITE) {
+                if (temp2[1] == '8') {
+                  cout << "Pawn promotion to?: ";
+                  cin >> tempest;
+                  while (!(*piece).promote(tempest)) {
+                    cout << "Invalid promotion, try again: ";
+                    cin >> tempest;
+                  }
+                }
+              } else {
+                if (temp2[1] == '1') {
+                  cout << "Pawn promotion to?: ";
+                  cin >> tempest;
+                  while (!(*piece).promote(tempest)) {
+                    cout << "Invalid promotion, try again: ";
+                    cin >> tempest;
+                  }
+                }
               }
             }
+            turn = !turn;
           } else {
-            if (temp2[1] == '1') {
-              cout << "Pawn promotion to?: ";
-              cin >> tempest;
-              while (!(*piece).promote(tempest)) {
-                cout << "Invalid promotion, try again: ";
-                cin >> tempest;
-              }
-            }
+            moveValidity = false;
+            //cout << "false: "<< err << endl;
+          }
+        } else {
+          if (!moveValidity)
+          cout << "Invalid move: " << err << endl;
+          if (makeAMove(pieces, turn)) {
+            //cout << "true" << endl;
+            moveValidity = true;
+            turn = !turn;
+          } else {
+            moveValidity = false;
+            //cout << "false" << endl;
           }
         }
-        turn = !turn;
-      } else {
-        moveValidity = false;
-        //cout << "false: "<< err << endl;
-      }
-    } else {
-      if (!moveValidity)
-      cout << "Invalid move: " << err << endl;
-      if (makeAMove(pieces, turn)) {
-        //cout << "true" << endl;
-        moveValidity = true;
-        turn = !turn;
-      } else {
-        moveValidity = false;
-        //cout << "false" << endl;
-      }
-    }
 
-    err = "Not in piece's moveset";
-    cout << endl;
-    gamestate = isEndGame(pieces);
-    if (gamestate == 1) {
-      cout << "Checkmate!" << endl;
-      end = true;
-    } else if (gamestate == -1) {
-      cout << "Stalemate" << endl;
-      end = true;
+        err = "Not in piece's moveset";
+        cout << endl;
+        gamestate = isEndGame(pieces);
+        if (gamestate == 1) {
+          clearBoard(board);
+          updateBoard(board, pieces);
+          system("cls");
+          printBoard(board);
+          cout << "Checkmate!\nPress any key to continue." << endl;
+          cin.get();
+          end = true;
+        } else if (gamestate == -1) {
+          clearBoard(board);
+          updateBoard(board, pieces);
+          system("cls");
+          printBoard(board);
+          cout << "Stalemate\nPress any key to continue." << endl;
+          cin.get();
+          end = true;
+        }
+      }
+    } else if (choice == 2) {
+      cout << "Goodbye!";
+      break;
     }
   }
 }

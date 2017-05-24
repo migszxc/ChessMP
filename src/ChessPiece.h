@@ -14,6 +14,7 @@ public:
   bool promote(char);
   Position position;
 private:
+  bool doubleMove;
   char type;
   bool color;
 };
