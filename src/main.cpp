@@ -146,7 +146,6 @@ int main() {
           }
         }
 
-        err = "Not in piece's moveset";
         cout << endl;
         gamestate = isEndGame(pieces);
         if (gamestate == 1) {
@@ -469,6 +468,7 @@ void initializePieces(ChessPiece pieces[32]){
 // moves the piece at origin to newPos
 bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *err) {
   // if the newposition is out of range of the board then it is an invalid move
+  *err = "Not in piece's moveset";
   if (newPos.x < 0 || newPos.x > 7 || newPos.y < 0 || newPos.y > 7) {
     *err = "Out of bounds";
     return false;
