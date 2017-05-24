@@ -87,8 +87,9 @@ int main() {
         cin >> playerC;
       }
       if (playerC == 'b') player = BLACK;
-
+      initializePieces(pieces);
       while (gamestate == 0) {
+
         clearBoard(board);
         updateBoard(board, pieces);
         system("cls");
@@ -153,16 +154,20 @@ int main() {
           updateBoard(board, pieces);
           system("cls");
           printBoard(board);
-          cout << "Checkmate!\nPress any key to continue." << endl;
-          cin.get();
+          cout << "Checkmate!\nPress Enter to continue." << endl;
+          char siu;
+          getchar();
+          cin.get(siu);
           end = true;
         } else if (gamestate == -1) {
           clearBoard(board);
           updateBoard(board, pieces);
           system("cls");
           printBoard(board);
-          cout << "Stalemate\nPress any key to continue." << endl;
-          cin.get();
+          cout << "Stalemate\nPress Enter to continue." << endl;
+          char siu;
+          getchar();
+          cin.get(siu);
           end = true;
         }
       }
