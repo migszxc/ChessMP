@@ -17,7 +17,7 @@ The goal is to create a single-player chess game. The player should be able to c
 		* position in the form of a Position object
 	* has methods that:
 		* return these information
-		* promote the piece( not yet implemented )
+		* promote the piece
 * Basic Game Logic
 	* all proper movesets of each piece
 	* does not allow a player to make a move that leaves their king in check

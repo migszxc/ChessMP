@@ -43,6 +43,7 @@ bool makeAMove(ChessPiece pieces[32], bool turn);
 
 int main() {
   ChessPiece pieces[32];
+  char tempest;
   char board[8][8];
   char playerC;
   string temp, temp2;
@@ -53,6 +54,7 @@ int main() {
   string err;
   string lastMove;
   bool end = false;
+  bool moveValidity = true;
   int gamestate = 0;
   cout << "w or b?" << endl;
   cin >> playerC;
@@ -61,36 +63,68 @@ int main() {
   while (gamestate == 0) {
     clearBoard(board);
     updateBoard(board, pieces);
+    system("cls");
     printBoard(board);
     if (turn == player) {
+      if (!moveValidity)
+      cout << "Invalid move: " << err << endl;
       cout << "Pick a piece to move: ";
       cin >> temp;
       cout << "Pick a place to move it: ";
       cin >> temp2;
       if (canMovePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn,&err)) {
         movePiece(Position().toPosition(temp),Position().toPosition(temp2),pieces,turn, &lastMove);
-        cout << "true" << endl;
+        //cout << "true" << endl;
+        moveValidity = true;
+        ChessPiece* piece = getPieceAt(Position().toPosition(temp2), pieces);
+        // promote the piece to a queen if it's at the end
+        if ((*piece).getType() == 'P') {
+          if (turn == WHITE) {
+            if (temp2[1] == '8') {
+              cout << "Pawn promotion to?: ";
+              cin >> tempest;
+              while (!(*piece).promote(tempest)) {
+                cout << "Invalid promotion, try again: ";
+                cin >> tempest;
+              }
+            }
+          } else {
+            if (temp2[1] == '1') {
+              cout << "Pawn promotion to?: ";
+              cin >> tempest;
+              while (!(*piece).promote(tempest)) {
+                cout << "Invalid promotion, try again: ";
+                cin >> tempest;
+              }
+            }
+          }
+        }
         turn = !turn;
       } else {
-        cout << "false: "<< err << endl;
+        moveValidity = false;
+        //cout << "false: "<< err << endl;
       }
     } else {
+      if (!moveValidity)
+      cout << "Invalid move: " << err << endl;
       if (makeAMove(pieces, turn)) {
-        cout << "true" << endl;
+        //cout << "true" << endl;
+        moveValidity = true;
         turn = !turn;
       } else {
-        cout << "false" << endl;
+        moveValidity = false;
+        //cout << "false" << endl;
       }
     }
 
-    err = "illegal move";
+    err = "Not in piece's moveset";
     cout << endl;
     gamestate = isEndGame(pieces);
     if (gamestate == 1) {
       cout << "Checkmate!" << endl;
       end = true;
     } else if (gamestate == -1) {
-      cout << "Statemate" << endl;
+      cout << "Stalemate" << endl;
       end = true;
     }
   }
@@ -100,12 +134,27 @@ bool makeAMove(ChessPiece pieces[32], bool turn) {
   string temp;
 
   for (int i = 0; i < 32; i++) {
+    // prune search tree of dead pieces and pieces that aren't its own
     if (pieces[i].getColor() == turn && pieces[i].isDead == false) {
       for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
           //cout << "is " << pieces[i].position.toString() << Position(x,y).toString() << " valid?" << endl;
           if (canMovePiece(pieces[i].position, Position(x,y),pieces, turn, &temp)) {
             movePiece(pieces[i].position, Position(x,y), pieces, turn, &temp);
+            ChessPiece* piece = getPieceAt(Position(x,y), pieces);
+
+            // promote the piece to a queen if it's at the end
+            if ((*piece).getType() == 'P') {
+              if (turn == WHITE) {
+                if (y == 7) {
+                  (*piece).promote('Q');
+                }
+              } else {
+                if (y == 0) {
+                  (*piece).promote('Q');
+                }
+              }
+            }
             return true;
           }
         }
@@ -163,9 +212,11 @@ ChessPiece* movePiece(Position origin, Position newPos, ChessPiece pieces[32], b
   return toEat;
 }
 
-
+// returns 0 if the game is not over yet
+// returns 1 if the game is a checkmate
+// returns -1 if the game is a stalemate
 int isEndGame(ChessPiece pieces[32]) {
-  cout << "endgame test:" << endl;
+  //cout << "endgame test:" << endl;
   bool checkW = isKingInCheck(pieces, WHITE);
   bool checkB = isKingInCheck(pieces, BLACK);
   bool wHasMoves = false;
@@ -371,17 +422,20 @@ void initializePieces(ChessPiece pieces[32]){
 bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool turn, string *err) {
   // if the newposition is out of range of the board then it is an invalid move
   if (newPos.x < 0 || newPos.x > 7 || newPos.y < 0 || newPos.y > 7) {
-    *err = "out of bounds exception";
+    *err = "Out of bounds";
     return false;
   }
-  if (origin.equals(newPos)) return false;
+  if (origin.equals(newPos)) {
+    *err = "Piece must be moved to a new position";
+    return false;
+  }
   // find the piece in the origin position
   ChessPiece* piece = getPieceAt(origin, pieces);
   // find the piece in the new position (if it exists)
   ChessPiece* toEat = getPieceAt(newPos, pieces);
   // if there is no piece to move, invalid move
   if (piece == NULL) {
-    *err = "no piece to move";
+    *err = "No piece to move";
     return false;
   }
   char type = (*piece).getType();
@@ -456,18 +510,18 @@ bool canMovePiece(Position origin, Position newPos, ChessPiece pieces[32], bool 
   // invalidate the move if it results in capturing its own teammate
   if (toEat) {
     if ((*toEat).getColor() == (*piece).getColor()) {
-      *err = "cannot capture piece of the same color";
+      *err = "Cannot capture piece of the same color";
       valid = false;
     }
   }
   // invalidate the move if the piece color being moved is not the turn
   if (turn != (*piece).getColor()) {
-    *err = "piece is not player's turn";
+    *err = "Piece is not player's turn";
     valid = false;
   }
   // invalidate the move if it will result in the check of the king
   if (willKingBeInCheck(origin, newPos, pieces, turn)) {
-    *err = "king in check";
+    *err = "King in check";
     valid = false;
   }
   return valid;

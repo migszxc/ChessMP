@@ -11,7 +11,7 @@ public:
   char getImage();
   bool getColor();
   bool isDead;
-  bool promote();
+  bool promote(char);
   Position position;
 private:
   char type;

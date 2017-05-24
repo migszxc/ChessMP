@@ -41,3 +41,11 @@ char ChessPiece::getImage() {
 bool ChessPiece::getColor() {
   return color;
 }
+
+bool ChessPiece::promote(char promotion) {
+  if (promotion != 'Q' || promotion != 'N' || promotion != 'R' || promotion != 'B') {
+    type = promotion;
+    return true;
+  }
+  else return false;
+}
